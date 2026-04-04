@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Sodenbank Dashboard</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      width: 280px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+    }
+#sugerencias {
+  max-width: 300px;
+  margin: auto;
+  background: #1e293b;
+  border-radius: 10px;
+  margin-top: 5px;
+}
+
+.sugerencia {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #334155;
+}
+
+.sugerencia:hover {
+  background: #334155;
+}
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      margin: 5px;
+      cursor: pointer;
+      background: #22c55e;
+      color: white;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: #16a34a;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 40px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      transform: translateY(30px);
+      opacity: 0;
+      transition: all 0.6s ease;
+    }
+
+    .card.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .card h2 {
+      margin-bottom: 10px;
+    }
+
+    .money {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .green { color: #22c55e; }
+    .red { color: #ef4444; }
+    .blue { color: #38bdf8; }
+
+    .user-card {
+      margin-top: 30px;
+      background: #0f172a;
+      padding: 20px;
+      border-radius: 15px;
+      display: none;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>💳 Sodenbank Dashboard</h1>
+
+  <input id="userId" placeholder="Ingresa ID">
+  <br><br>
+<input id="buscarNombre" placeholder="Buscar por nombre..." oninput="buscarPorNombre()">
+<div id="sugerencias"></div>
+  <button onclick="buscar()">Buscar</button>
+  <button onclick="cargarEjemplo()">Ejemplo</button>
+
+  <div id="userInfo" class="user-card"></div>
+
+  <div id="dashboard" class="dashboard"></div>
+
+  <script>
+    function cargarEjemplo() {
+      document.getElementById("userId").value = "0011128c-8d81-484c-997a-cc59510aa40a";
+    }
+async function buscarPorNombre() {
+  const nombre = document.getElementById("buscarNombre").value;
+
+  if (nombre.length < 2) {
+    document.getElementById("sugerencias").innerHTML = "";
+    return;
+  }
+
+  const res = await fetch(`http://localhost:3000/buscar/${nombre}`);
+  const data = await res.json();
+
+  let html = "";
+
+  data.forEach(user => {
+    html += `
+      <div class="sugerencia" onclick="seleccionarUsuario('${user.id}')">
+        ${user.nombre}
+      </div>
+    `;
+  });
+
+  document.getElementById("sugerencias").innerHTML = html;
+}
+
+function seleccionarUsuario(id) {
+  document.getElementById("userId").value = id;
+  document.getElementById("sugerencias").innerHTML = "";
+  buscar();
+}
+    async function buscar() {
+      const id = document.getElementById("userId").value;
+
+      const res = await fetch(`http://localhost:3000/usuario/${id}`);
+      const data = await res.json();
+
+      console.log(data);
+
+      if (!data.nombre) {
+        document.getElementById("dashboard").innerHTML = `
+          <div class="card show">
+            ❌ Usuario no encontrado
+          </div>
+        `;
+        return;
+      }
+
+      // Info usuario
+      document.getElementById("userInfo").style.display = "block";
+      document.getElementById("userInfo").innerHTML = `
+        <h2>${data.nombre}</h2>
+        <p>${data.correo}</p>
+        <p>${data.telefono}</p>
+      `;
+
+      // Dashboard
+      const dashboard = document.getElementById("dashboard");
+
+      dashboard.innerHTML = `
+        <div class="card">
+          <h2>Total en cuenta</h2>
+          <p class="money green">$${data.total}</p>
+        </div>
+
+        <div class="card">
+          <h2>Deuda</h2>
+          <p class="money red">$${data.deuda}</p>
+        </div>
+
+        <div class="card">
+          <h2>Ahorro</h2>
+          <p class="money blue">$${data.ahorro}</p>
+        </div>
+      `;
+
+      // Animación
+      setTimeout(() => {
+        document.querySelectorAll('.card').forEach(card => {
+          card.classList.add('show');
+        });
+      }, 100);
+    }
+  </script>
+
+</body>
+</html>
