@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+
+  backend:
+    build: .
+    container_name: sodenbank-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    depends_on:
+      - mysql
+      - postgres
+      - mongo
+
+  mysql:
+    image: mysql:8
+    container_name: sodenbank-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: sodenbank_mysql
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  postgres:
+    image: postgres:15
+    container_name: sodenbank-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: sodenbank_postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo
+    container_name: sodenbank-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  grafana:
+    image: grafana/grafana
+    container_name: sodenbank-grafana
+    ports:
+      - "3002:3000"
+    depends_on:
+      - postgres
+
+volumes:
+  mysql_data:
+  pg_data:
+  mongo_data:
